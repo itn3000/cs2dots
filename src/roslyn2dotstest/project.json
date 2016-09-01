@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0-*",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": true,
+    "compile": {
+      "exclude": [
+        "Test.cs",
+        "dist/*",
+        "bin/*",
+        "obj/*"
+      ]
+    }
+  },
+  "dependencies": {
+    "Cs2Dots":{
+      "target":"project"
+    },
+    "Microsoft.Extensions.CommandLineUtils": "1.0.0"
+  },
+  "frameworks": {
+    "netcoreapp1.0":{
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type":"platform",
+          "version":"1.0.0"
+        }
+      },
+      "imports": [
+        "portable-net45"
+      ]
+    }
+  }
+}
