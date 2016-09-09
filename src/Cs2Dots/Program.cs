@@ -19,6 +19,7 @@ namespace ConsoleApplication
             var inputOption = app.Option("-i|--input <PATH>", "input cs file path(default: standard input)", CommandOptionType.SingleValue);
             var modeOption = app.Option("-m|--mode <MODE>", "parse mode(cs=regular C#(default),csx=scripting C#)", CommandOptionType.SingleValue);
             var nameOption = app.Option("-n|--name <GRAPHNAME>", "graph name(default=syntaxtree)", CommandOptionType.SingleValue);
+            var jsonOption = app.Option("-j|--json", "output as json(compressed)", CommandOptionType.NoValue);
             var includeTokenOption = app.Option("-t|--token", "include token", CommandOptionType.NoValue);
             app.HelpOption("-h|--help");
             app.VersionOption("-v|--version", "1.0.0");
@@ -50,11 +51,20 @@ namespace ConsoleApplication
                 }
                 try
                 {
-                    Cs2Dots.Cs2DotsConverter.Convert(inputStream.ReadToEnd(), outputStream, new Cs2Dots.ConvertOption(){
+                    var convertOption = new Cs2Dots.ConvertOption()
+                    {
                         GraphName = name,
                         IsScript = modeOption.HasValue() && modeOption.Value().ToLower() == "csx",
                         IsIncludeToken = includeToken
-                    });
+                    };
+                    if (jsonOption.HasValue())
+                    {
+                        Cs2Dots.Cs2JsonConverter.Convert(inputStream.ReadToEnd(), outputStream, convertOption);
+                    }
+                    else
+                    {
+                        Cs2Dots.Cs2DotsConverter.Convert(inputStream.ReadToEnd(), outputStream, convertOption);
+                    }
                 }
                 finally
                 {

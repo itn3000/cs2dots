@@ -8,12 +8,6 @@ using System.Linq;
 
 namespace Cs2Dots
 {
-    public class ConvertOption
-    {
-        public bool IsScript = false;
-        public bool IsIncludeToken = false;
-        public string GraphName = "syntaxtree";
-    }
     public static class Cs2DotsConverter
     {
         public static void Convert(string code, TextWriter output, ConvertOption opts = default(ConvertOption))

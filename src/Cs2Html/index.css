@@ -1,0 +1,15 @@
+ul.syntaxTree {
+    list-style-type: none;
+}
+
+code {
+    white-space: pre;
+}
+
+pre {
+    background-color: lightgray;
+    /*border: solid 1px lightgray;*/
+    padding-right: 0px;
+    margin-right: 0px;
+    display: inline-block;
+}
