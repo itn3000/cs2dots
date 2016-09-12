@@ -15,6 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Congratulations, your extension "cs-syntax-visualizer" is now active!');
     console.log(__dirname);
 
+    new CsSyntaxVisualizer.CsSyntaxVisualizerExtension(context).initialize();
+
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
@@ -34,55 +36,60 @@ export function deactivate() {
 
 module CsSyntaxVisualizer {
     export class CsSyntaxVisualizerExtension {
-        private provider = new CsTextDocumentContentProvider();
-        constructor(private context: vscode.ExtensionContext)
-        {
-
+        private provider: CsTextDocumentContentProvider;
+        constructor(private context: vscode.ExtensionContext) {
+            let dotsPath = process.env['GRAPHVIZ_DOT'];
+            let dotnetPath = "dotnet";
+            let cs2dotsPath = path.join(this.context.extensionPath, "bin", "Cs2Dots");
+            this.provider = new CsTextDocumentContentProvider(dotsPath, dotnetPath, cs2dotsPath);
         }
-        public initialize(){
-
+        public initialize() {
+            this.registerTextProvider();
+            this.registerDocumentChangedWatcher();
+            this.registerCommands();
         }
         private registerTextProvider(): void {
-            let reg = vscode.workspace.registerTextDocumentContentProvider('cs-syntax-visualizer',this.provider);
+            let reg = vscode.workspace.registerTextDocumentContentProvider(CsTextDocumentContentProvider.Schema, this.provider);
             this.context.subscriptions.push(reg);
         }
         private registerCommands(): void {
-            let disposable = vscode.commands.registerCommand('extension.visualizeCsSyntax',()=>{
+            let disposable = vscode.commands.registerCommand('extension.visualizeCsSyntax', () => {
                 let editor = vscode.window.activeTextEditor;
                 return vscode.commands.executeCommand('vscode.previewHtml'
-                    ,CsTextDocumentContentProvider.PreviewUri
-                    ,vscode.ViewColumn.Two,'Visualize C# syntax')
-                    .then((success) =>{
+                    , CsTextDocumentContentProvider.PreviewUri
+                    , vscode.ViewColumn.Two, 'Visualize C# syntax')
+                    .then((success) => {
                         this.provider.update(CsTextDocumentContentProvider.PreviewUri);
-                        editor.show();
-                    },(reason) => {
+                        vscode.window.showTextDocument(editor.document);
+                    }, (reason) => {
                         vscode.window.showErrorMessage(reason);
                     });
             });
             this.context.subscriptions.push(disposable);
         }
-        private registerDocumentChangedWatcher(): void{
-            let editorChanged = vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor) =>{
+        private registerDocumentChangedWatcher(): void {
+            let editorChanged = vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor) => {
                 this.provider.update(CsTextDocumentContentProvider.PreviewUri);
             })
             let changedTimeStamp = new Date().getTime();
             let documentChanged = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-                if(vscode.window.activeTextEditor.document != e.document)
-                {
+                if (vscode.window.activeTextEditor.document != e.document) {
                     return;
                 }
                 changedTimeStamp = new Date().getTime();
-                setTimeout(()=>{
-                    if(new Date().getTime() - changedTimeStamp >= 400)
-                    {
+                setTimeout(() => {
+                    if (new Date().getTime() - changedTimeStamp >= 400) {
                         this.provider.update(CsTextDocumentContentProvider.PreviewUri);
                     }
                 }, 500);
             });
-            this.context.subscriptions.push(editorChanged,documentChanged);
+            this.context.subscriptions.push(editorChanged, documentChanged);
         }
     }
     class CsTextDocumentContentProvider implements vscode.TextDocumentContentProvider {
+        public constructor(private dotsPath: string, private dotnetPath: string, private cs2DotsPath: string) {
+
+        }
         public static Schema = "visualize-cs-syntax";
         public static PreviewUri = vscode.Uri.parse(`${CsTextDocumentContentProvider.Schema}://authority/cs-syntax-visualize`);
         public provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
@@ -96,17 +103,22 @@ module CsSyntaxVisualizer {
         }
         private extractSnipet(): Thenable<string> {
             let editor = vscode.window.activeTextEditor;
-            return CsSyntaxExecutor.createSvgExecutor(editor.document.getText(), null)
+            let opt = new CsSyntaxExecutorOptions();
+            opt.cs2dotsPath = this.cs2DotsPath;
+            opt.dotnetPath = this.dotnetPath;
+            opt.dotsPath = this.dotsPath;
+            return CsSyntaxExecutor.createSvgExecutor(editor.document.getText(),
+                opt)
                 .execute()
                 .then(x => `<body style="background-color:white;">${x}</body>`)
                 ;
 
         }
         private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
-        get onDidChange() : vscode.Event<vscode.Uri>{
+        get onDidChange(): vscode.Event<vscode.Uri> {
             return this._onDidChange.event;
         }
-        public update(uri: vscode.Uri){
+        public update(uri: vscode.Uri) {
             this._onDidChange.fire(uri);
         }
     }
@@ -138,6 +150,8 @@ module CsSyntaxVisualizer {
                 , [cs2dotsdll]);
             process.stdin.write(this.code);
             process.stdin.end();
+            let dotsopts = this.dotsOptions;
+            let dotspath = this.executeOptions.dotsPath;
             return Q.Promise<string>((resolve, reject, notify) => {
                 var output = '';
                 process.stdout.on('data', x => {
@@ -156,8 +170,8 @@ module CsSyntaxVisualizer {
                     }
                 })
             }).then(data => {
-                let dotsproc = child_process.spawn(this.executeOptions.dotsPath,
-                    this.dotsOptions);
+                let dotsproc = child_process.spawn(dotspath,
+                    dotsopts);
                 dotsproc.stdin.write(data);
                 dotsproc.stdin.end();
                 return Q.Promise<string>((resolve, reject, notify) => {
@@ -173,9 +187,8 @@ module CsSyntaxVisualizer {
                     dotsproc.stderr.on('data', (x) => {
                         errout += x;
                     });
-                    dotsproc.stderr.on('close', () =>{
-                        if(!!errout)
-                        {
+                    dotsproc.stderr.on('close', () => {
+                        if (!!errout) {
                             console.log(errout);
                         }
                     })

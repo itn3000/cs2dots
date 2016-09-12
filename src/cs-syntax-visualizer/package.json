@@ -11,16 +11,31 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.sayHello"
+    "onCommand:extension.visualizeCsSyntax"
   ],
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
-        "command": "extension.sayHello",
-        "title": "Hello World"
+        "command": "extension.visualizeCsSyntax",
+        "title": "Visualize C# syntax tree"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "C# syntax visualizer configuration",
+      "properties": {
+        "cssyntaxvisualizer.dotsPath": {
+          "type": "string",
+          "default": null,
+          "description": "fullpath to graphviz dot executable(if null or empty,use GRAPHVIZ_DOT env variable)"
+        },
+        "cssyntaxvisualizer.dotnetPath": {
+          "type": "string",
+          "default": "dotnet",
+          "description": "path to dotnet-cli command"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
