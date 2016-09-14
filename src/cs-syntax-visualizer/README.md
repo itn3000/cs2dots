@@ -13,6 +13,17 @@ C# syntax tree visualizer powered by roslyn
 * [dotnet-cli version 1.0](https://www.microsoft.com/net/core)
 * [graphviz(tested on 2.38)](http://www.graphviz.org/)
 
+### Commands
+
+* `Visualize C# syntax tree of whole file`
+    * Visualize C# syntax tree of active document
+    * update graph when document edit
+* `Visualize C# syntax tree of selected text` 
+    * Visualize C# syntax tree of selected text
+* `Export Visualized C# syntax tree as [FORMAT]`
+    * Export syntax tree as specific format file
+    * currently,png and svg supported 
+
 ## Extension Settings
 
 * `cssyntaxvisualizer.dotsPath`: fullpath to graphviz dot command 

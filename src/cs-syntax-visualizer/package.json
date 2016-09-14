@@ -12,7 +12,9 @@
   ],
   "activationEvents": [
     "onCommand:extension.visualizeCsSyntax",
-    "onCommand:extension.visualizeCsSyntaxSelected"
+    "onCommand:extension.visualizeCsSyntaxSelected",
+    "onCommand:extension.visualizeCsSyntaxExportAspng",
+    "onCommand:extension.visualizeCsSyntaxExportAssvg"
   ],
   "main": "./out/src/extension",
   "contributes": {
@@ -24,6 +26,14 @@
       {
         "command": "extension.visualizeCsSyntaxSelected",
         "title": "Visualize C# syntax tree of selected text"
+      },
+      {
+        "command": "extension.visualizeCsSyntaxExportAspng",
+        "title": "Export visualized C# syntax tree as PNG"
+      },
+      {
+        "command": "extension.visualizeCsSyntaxExportAssvg",
+        "title": "Export visualized C# syntax tree as SVG"
       }
     ],
     "configuration": {

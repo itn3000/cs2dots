@@ -14,7 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "cs-syntax-visualizer" is now active!');
     console.log(__dirname);
-
     new CsSyntaxVisualizer.CsSyntaxVisualizerExtension(context).initialize();
 }
 
@@ -25,6 +24,22 @@ export function deactivate() {
 module CsSyntaxVisualizer {
     export class CsSyntaxVisualizerExtension {
         private provider: CsTextDocumentContentProvider;
+        private getCsSyntaxExecutorOption(includeToken: boolean, isScriptMode: boolean): CsSyntaxExecutorOptions {
+            let cfg = vscode.workspace.getConfiguration("cssyntaxvisualizer");
+            let dotsPath = cfg.get("dotsPath", null);
+            if (dotsPath == null || dotsPath == "") {
+                dotsPath = process.env['GRAPHVIZ_DOT'];
+            }
+            let dotnetPath = cfg.get("dotnetPath", "dotnet");
+            let cs2dotsPath = path.join(this.context.extensionPath, "bin", "Cs2Dots");
+            let ret = new CsSyntaxExecutorOptions();
+            ret.cs2dotsPath = cs2dotsPath;
+            ret.dotnetPath = dotnetPath;
+            ret.dotsPath = dotsPath;
+            ret.includeToken = includeToken;
+            ret.isScriptMode = isScriptMode;
+            return ret;
+        }
         constructor(private context: vscode.ExtensionContext) {
             let cfg = vscode.workspace.getConfiguration("cssyntaxvisualizer");
             let dotsPath = cfg.get("dotsPath", null);
@@ -70,6 +85,32 @@ module CsSyntaxVisualizer {
                     }, (reason) => {
                         vscode.window.showErrorMessage(reason);
                     });
+            });
+            let formats = ['png', 'svg'];
+            formats.forEach(fmt => {
+                let cmd = vscode.commands.registerCommand(`extension.visualizeCsSyntaxExportAs${fmt}`, () => {
+                    let editor = vscode.window.activeTextEditor;
+                    let code = editor.document.getText();
+                    let outputDefaultPath = "";
+                    if (editor.document.fileName != null) {
+                        outputDefaultPath = editor.document.fileName.replace(path.extname(editor.document.fileName), "") + "." + fmt;
+                    } else {
+                        outputDefaultPath = path.join(vscode.workspace.rootPath, "out." + fmt);
+                    }
+                    return vscode.window.showInputBox({ prompt: "export file path", value: outputDefaultPath })
+                        .then(outputPath => {
+                            if (outputPath == null) {
+                                return "";
+                            }
+                            else if (outputPath == "") {
+                                outputPath = outputDefaultPath;
+                            }
+                            let executor = CsSyntaxExecutor.createExportExecutor(code, this.getCsSyntaxExecutorOption(false, false), fmt, outputPath);
+                            return executor.execute();
+                        })
+                        ;
+                });
+                this.context.subscriptions.push(cmd);
             });
             this.context.subscriptions.push(disposable);
             this.context.subscriptions.push(selected);
@@ -164,6 +205,23 @@ module CsSyntaxVisualizer {
                 , ["-Tsvg"]
                 , cs2dots);
         }
+        public static createExportExecutor(code: string
+            , options: CsSyntaxExecutorOptions
+            , format: string
+            , outputPath: string) {
+            let cs2dots = [];
+            if (options.includeToken) {
+                cs2dots.push("-t");
+            }
+            if (options.isScriptMode) {
+                cs2dots.push("-m");
+                cs2dots.push("csx");
+            }
+            return new CsSyntaxExecutor(code
+                , options
+                , [`-T${format}`, "-o", outputPath]
+                , cs2dots);
+        }
         constructor(
             private code: string,
             private executeOptions: CsSyntaxExecutorOptions,
@@ -194,7 +252,7 @@ module CsSyntaxVisualizer {
                 });
                 process.stderr.on('close', x => {
                     if (!!er) {
-                        console.log(er);
+                        vscode.window.showErrorMessage(er);
                     }
                 })
             }).then(data => {
@@ -217,7 +275,7 @@ module CsSyntaxVisualizer {
                     });
                     dotsproc.stderr.on('close', () => {
                         if (!!errout) {
-                            console.log(errout);
+                            vscode.window.showErrorMessage(errout);
                         }
                     })
                 });
