@@ -2,10 +2,11 @@ project.lock.json
 bin/
 obj/
 dist/
-*.png
 .vscode/
+*.png
 node_modules/
 bundle.js
 *.dll
 *.vsix
 out/
+!src/cs-syntax-visualizer/images/*.*
