@@ -11,14 +11,19 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.visualizeCsSyntax"
+    "onCommand:extension.visualizeCsSyntax",
+    "onCommand:extension.visualizeCsSyntaxSelected"
   ],
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
         "command": "extension.visualizeCsSyntax",
-        "title": "Visualize C# syntax tree"
+        "title": "Visualize C# syntax tree of whole file"
+      },
+      {
+        "command": "extension.visualizeCsSyntaxSelected",
+        "title": "Visualize C# syntax tree of selected text"
       }
     ],
     "configuration": {
