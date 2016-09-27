@@ -59,6 +59,47 @@ module CsSyntaxVisualizer {
             let reg = vscode.workspace.registerTextDocumentContentProvider(CsTextDocumentContentProvider.Schema, this.provider);
             this.context.subscriptions.push(reg);
         }
+        private exportDocument(code: string, editor: vscode.TextEditor): Thenable<string> {
+            let outputDefaultPath = "";
+            let fmts = ["png", "svg"];
+            return vscode.window.showQuickPick(fmts, { placeHolder: "choose format" })
+                .then(fmt => {
+                    if (fmt == null || fmt == "") {
+                        return "";
+                    }
+                    if (editor.document.fileName != null) {
+                        outputDefaultPath = editor.document.fileName.replace(path.extname(editor.document.fileName), "") + "." + fmt;
+                    } else {
+                        outputDefaultPath = path.join(vscode.workspace.rootPath, "out." + fmt);
+                    }
+                    return vscode.window.showInputBox({ prompt: "export file path", value: outputDefaultPath })
+                        .then(outputPath => {
+                            if (outputPath == null) {
+                                return "";
+                            }
+                            else if (outputPath == "") {
+                                outputPath = outputDefaultPath;
+                            }
+                            let executor = CsSyntaxExecutor.createExportExecutor(code, this.getCsSyntaxExecutorOption(false, false), fmt, outputPath);
+                            return executor.execute();
+                        })
+                        ;
+                });
+        }
+        private createExportEntireDocumentCommand(): vscode.Disposable {
+            return vscode.commands.registerCommand(`extension.visualizeCsSyntaxExportEntire`, () => {
+                let editor = vscode.window.activeTextEditor;
+                let code = editor.document.getText();
+                return this.exportDocument(code,editor);
+            });
+        }
+        private createExportPartialCommand(): vscode.Disposable {
+            return vscode.commands.registerCommand('extension.visualizeCsSyntaxExportPartial',() =>{
+                let editor = vscode.window.activeTextEditor;
+                let code = editor.document.getText(editor.selection);
+                return this.exportDocument(code,editor);
+            });
+        }
         private registerCommands(): void {
             let disposable = vscode.commands.registerCommand('extension.visualizeCsSyntax', () => {
                 let editor = vscode.window.activeTextEditor;
@@ -86,32 +127,10 @@ module CsSyntaxVisualizer {
                         vscode.window.showErrorMessage(reason);
                     });
             });
-            let formats = ['png', 'svg'];
-            formats.forEach(fmt => {
-                let cmd = vscode.commands.registerCommand(`extension.visualizeCsSyntaxExportAs${fmt}`, () => {
-                    let editor = vscode.window.activeTextEditor;
-                    let code = editor.document.getText();
-                    let outputDefaultPath = "";
-                    if (editor.document.fileName != null) {
-                        outputDefaultPath = editor.document.fileName.replace(path.extname(editor.document.fileName), "") + "." + fmt;
-                    } else {
-                        outputDefaultPath = path.join(vscode.workspace.rootPath, "out." + fmt);
-                    }
-                    return vscode.window.showInputBox({ prompt: "export file path", value: outputDefaultPath })
-                        .then(outputPath => {
-                            if (outputPath == null) {
-                                return "";
-                            }
-                            else if (outputPath == "") {
-                                outputPath = outputDefaultPath;
-                            }
-                            let executor = CsSyntaxExecutor.createExportExecutor(code, this.getCsSyntaxExecutorOption(false, false), fmt, outputPath);
-                            return executor.execute();
-                        })
-                        ;
-                });
-                this.context.subscriptions.push(cmd);
-            });
+            let exportEntire = this.createExportEntireDocumentCommand();
+            this.context.subscriptions.push(exportEntire);
+            let exportPartial = this.createExportPartialCommand();
+            this.context.subscriptions.push(exportPartial);
             this.context.subscriptions.push(disposable);
             this.context.subscriptions.push(selected);
         }
