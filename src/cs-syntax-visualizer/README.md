@@ -39,6 +39,10 @@ all issues(including feature enhancements) are listed in [github](https://github
 
 Users appreciate release notes as you update your extension.
 
+### 0.0.2
+
+support export partial syntax tree(#1)
+
 ### 0.0.1
 
 Initial release of c# syntax visualizer
