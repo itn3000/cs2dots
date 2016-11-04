@@ -90,14 +90,14 @@ module CsSyntaxVisualizer {
             return vscode.commands.registerCommand(`extension.visualizeCsSyntaxExportEntire`, () => {
                 let editor = vscode.window.activeTextEditor;
                 let code = editor.document.getText();
-                return this.exportDocument(code,editor);
+                return this.exportDocument(code, editor);
             });
         }
         private createExportPartialCommand(): vscode.Disposable {
-            return vscode.commands.registerCommand('extension.visualizeCsSyntaxExportPartial',() =>{
+            return vscode.commands.registerCommand('extension.visualizeCsSyntaxExportPartial', () => {
                 let editor = vscode.window.activeTextEditor;
                 let code = editor.document.getText(editor.selection);
-                return this.exportDocument(code,editor);
+                return this.exportDocument(code, editor);
             });
         }
         private registerCommands(): void {
@@ -155,11 +155,11 @@ module CsSyntaxVisualizer {
     }
     class CsTextDocumentContentProvider implements vscode.TextDocumentContentProvider {
         public constructor(private dotsPath: string, private dotnetPath: string, private cs2DotsPath: string) {
-
         }
         public static Schema = "visualize-cs-syntax";
         public static PreviewUri = vscode.Uri.parse(`${CsTextDocumentContentProvider.Schema}://authority/cs-syntax-visualize`);
         public static PreviewSelectedUri = vscode.Uri.parse(`${CsTextDocumentContentProvider.Schema}://authority/cs-syntax-visualize-selected`);
+        public static CsOutputChannel = vscode.window.createOutputChannel("CsSyntaxVisualizer");
         public provideTextDocumentContent(uri: vscode.Uri): string | Thenable<string> {
             return this.createSnipet(uri);
         }
@@ -251,12 +251,16 @@ module CsSyntaxVisualizer {
         public execute(): Q.Promise<string> {
             let cs2dotsParams = [];
             let cs2dotsdll = path.join(this.executeOptions.cs2dotsPath, "Cs2Dots.dll");
-            let process = child_process.spawn("dotnet"
+            let process = child_process.spawn(this.executeOptions.dotnetPath
                 , [cs2dotsdll].concat(this.cs2dotsOptions));
             process.stdin.write(this.code);
             process.stdin.end();
             let dotsopts = this.dotsOptions;
             let dotspath = this.executeOptions.dotsPath;
+            CsTextDocumentContentProvider.CsOutputChannel.appendLine("dotspath=" + dotspath);
+            CsTextDocumentContentProvider.CsOutputChannel.appendLine("cs2dotsdll=" + cs2dotsdll);
+            CsTextDocumentContentProvider.CsOutputChannel.appendLine("dotnetpath=" + this.executeOptions.dotnetPath);
+            CsTextDocumentContentProvider.CsOutputChannel.appendLine("dotsargs=" + dotsopts.join("|"));
             return Q.Promise<string>((resolve, reject, notify) => {
                 var output = '';
                 process.stdout.on('data', x => {
