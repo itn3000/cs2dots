@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import * as Q from 'q';
 import * as child_process from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -241,6 +242,27 @@ module CsSyntaxVisualizer {
                 , [`-T${format}`, "-o", outputPath]
                 , cs2dots);
         }
+        private outputExtensionDir() {
+            let exdir = this.executeOptions.cs2dotsPath;
+            CsTextDocumentContentProvider.CsOutputChannel.appendLine("extension dir=" + exdir);
+            fs.readdir(exdir, (err, files) => {
+                if (err != null) {
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("error occurred in reading extension path");
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("code=" + err.code);
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("name=" + err.name);
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("msg=" + err.message);
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("path=" + err.path);
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("stack=" + err.stack);
+                } else {
+                    CsTextDocumentContentProvider.CsOutputChannel.appendLine("extension dir contents");
+                    if (files != null) {
+                        files.forEach(element => {
+                            CsTextDocumentContentProvider.CsOutputChannel.appendLine(element);
+                        });
+                    }
+                }
+            });
+        }
         constructor(
             private code: string,
             private executeOptions: CsSyntaxExecutorOptions,
@@ -249,6 +271,7 @@ module CsSyntaxVisualizer {
         ) {
         }
         public execute(): Q.Promise<string> {
+            this.outputExtensionDir();
             let cs2dotsParams = [];
             let cs2dotsdll = path.join(this.executeOptions.cs2dotsPath, "Cs2Dots.dll");
             let process = child_process.spawn(this.executeOptions.dotnetPath
