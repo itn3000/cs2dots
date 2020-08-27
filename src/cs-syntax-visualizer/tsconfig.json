@@ -1,14 +1,19 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es5",
+        "module": "system",
+        "target": "es6",
         "outDir": "out",
-        "noLib": true,
+        "noLib": false,
         "sourceMap": true,
-        "rootDir": "."
+        "rootDir": ".",
+        "moduleResolution": "node"
     },
     "exclude": [
         "node_modules",
-        ".vscode-test"
+        ".vscode-test",
+        "**/*.spec.ts"
+    ],
+    "include": [
+        "src/**/*"
     ]
 }
