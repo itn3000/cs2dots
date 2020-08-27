@@ -10,3 +10,4 @@ bundle.js
 *.vsix
 out/
 !src/cs-syntax-visualizer/images/*.*
+.tmp/

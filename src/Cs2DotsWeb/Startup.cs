@@ -1,26 +1,33 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
 namespace Cs2DotsWeb
 {
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.AspNetCore.Builder;
-    using Microsoft.Extensions.FileProviders;
-    using Microsoft.AspNetCore.Hosting;
-    using System.IO;
-    using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Configuration;
-    using System;
-
-    class Startup
+    public class Startup
     {
-        string m_GraphVizPath = "dot";
-        public Startup(IHostingEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            var config = new ConfigurationBuilder()
-                // .AddCommandLine(Environment.GetCommandLineArgs())
-                .AddEnvironmentVariables()
-                .Build()
-                ;
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        string m_GraphVizPath;
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddControllersWithViews();
             m_GraphVizPath = "";
-            var graphVizPathConfig = config.GetSection("GraphVizPath");
+            var graphVizPathConfig = Configuration.GetSection("GraphVizPath");
             if(graphVizPathConfig != null)
             {
                 m_GraphVizPath = graphVizPathConfig.Value;
@@ -29,11 +36,6 @@ namespace Cs2DotsWeb
             {
                 m_GraphVizPath = Environment.GetEnvironmentVariable("GRAPHVIZ_DOT");
             }
-        }
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc();
-            services.AddLogging();
             services.AddTransient(typeof(Cs2DotsConfig),prov => {
                 return new Cs2DotsConfig()
                 {
@@ -41,21 +43,32 @@ namespace Cs2DotsWeb
                 };
             });
         }
-        public void Configure(IApplicationBuilder builder,IHostingEnvironment env,ILoggerFactory loggerFactory)
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            loggerFactory.AddConsole();
-            loggerFactory.AddDebug();
-            var stopts = new StaticFileOptions();
-            stopts.FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath,"node_modules"));
-            stopts.RequestPath = "/jslib";
-            builder.UseStaticFiles(stopts);
-            stopts = new StaticFileOptions();
-            stopts.FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath,"wwwroot","js"));
-            stopts.RequestPath = "/js";
-            builder.UseStaticFiles(stopts);
-            builder.UseMvc(routes => {
-                routes.MapRoute("default",
-                    "{controller=Home}/{action=Index}");
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/Home/Error");
+                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                app.UseHsts();
+            }
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }

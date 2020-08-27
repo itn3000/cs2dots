@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "C# syntax visualizer";
+}
+<html>
+    <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    </head>
+    <body>
+        <h1>C# syntax visualizer</h1>
+        <div id="vueapp">
+            <div id="monacocontainer" style="width:400px;height:300px;border:1px solid grey;"></div>
+            <p>
+                <ul class="optionlist">
+                    <li><input type="checkbox" v-model="scriptMode">script mode</input></li>
+                    <li><input type="checkbox" v-model="includeToken">include token</input></li>
+                </ul>
+            </p>
+            <button v-on:click="convertSvg">Convert</button>
+            <div>{{{svgData}}}</div>
+        </div>
+        <script type="text/javascript">var basePath = '@Url.Content("~/")'</script>
+        <script src="~/js/require.js"></script>
+        <!--<script src="~/jslib/monaco-editor/min/vs/loader.js"></script>
+        <script src="~/jslib/vue/dist/vue.min.js"></script>-->
+        <script src="~/js/index.js"></script>
+    </body>
+</html>
